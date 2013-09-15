@@ -1,4 +1,4 @@
-package com.sillysoft.lux.agent;
+package Rismect;
 
 import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
@@ -13,40 +13,38 @@ import com.sillysoft.lux.Board;
 import com.sillysoft.lux.Card;
 import com.sillysoft.lux.Country;
 
-public class RismectNode {
+public class Node {
 	
-	private RismectNode parent;
-	private RismectMove move;
-	private RismectState gameState;
+	private Node parent;
+	private Move move;
+	private State gameState;
 	
-	private LinkedList<RismectMove> moveStack = null;
-	private ListIterator<RismectMove> iterator= null;
+	private LinkedList<Move> moveStack = null;
+	private ListIterator<Move> iterator= null;
 	
-	private List<RismectNode> children;
+	private List<Node> children;
 	
 	private int visitCount;
 	private double totalValue;
 	
 	// used to add a new node to the existing search tree
-	public RismectNode(RismectMove move, RismectState oldGameState,RismectNode parent) {
+	public Node(Move move, State oldGameState,Node parent) {
 		this.parent = parent;
 		this.move = move;
-		gameState = new RismectState(oldGameState,move);
+		gameState = new State(oldGameState,move);
 		moveStack = gameState.getAllMoves();
 		iterator = moveStack.listIterator();
 		
 	}
 
-	public RismectNode(int id, Board board) {
+	public Node(State gameState) {
 		
-		
-		
-		gameState= new RismectState(id, board);
+		this.gameState= gameState;
 	}
 
 	public void updateNodeRankings(int winningPlayer) {
 		
-		RismectNode current = this;
+		Node current = this;
 		
 		while(current!=null){
 			current.visitCount++;
@@ -56,10 +54,10 @@ public class RismectNode {
 		
 	}
 
-	public List<RismectMove> getFinalMoves() {
-		List<RismectMove> finalMoveStack = new LinkedList<RismectMove>();
+	public List<Move> getFinalMoves() {
+		List<Move> finalMoveStack = new LinkedList<Move>();
 		
-		RismectNode current = this;
+		Node current = this;
 		while(current.gameState.players.currentPlayer.id == this.gameState.players.currentPlayer.id ){
 			finalMoveStack.add(current.move);
 		}
@@ -73,7 +71,7 @@ public class RismectNode {
 		return ! this.iterator.hasNext();
 	}
 
-	public RismectNode getBestChild(double d) {
+	public Node getBestChild(double d) {
 		int maxIndex=0;
 		double temp=0,max = Double.MIN_VALUE;
 		
@@ -91,10 +89,10 @@ public class RismectNode {
 	}
 
 	
-	public RismectNode expandNewChild() {
+	public Node expandNewChild() {
 		
 		if(this.iterator.hasNext()){
-			return new RismectNode(iterator.next(),gameState,this);
+			return new Node(iterator.next(),gameState,this);
 		}
 		return null;
 	}
@@ -103,8 +101,8 @@ public class RismectNode {
 		return this.gameState.isTerminal();
 	}
 
-	public RismectState getClonedGameState() {
-		return new RismectState(this.gameState);
+	public State getClonedGameState() {
+		return new State(this.gameState);
 		
 	}
 	

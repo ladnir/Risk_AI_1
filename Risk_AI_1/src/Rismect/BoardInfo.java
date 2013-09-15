@@ -1,18 +1,48 @@
-package com.sillysoft.lux.agent;
+package Rismect;
 
+import java.util.HashMap;
 import java.util.Map;
 
-public class RismectBoardInfo {
+import com.sillysoft.lux.Board;
+import com.sillysoft.lux.Country;
+
+public class BoardInfo {
 	
-	Map<Integer, Integer> continentsBounus;
+	Map<Integer, Integer> continentsBonus;
 	int continentIncrease;
 	String cardProgression;
 	
-	public RismectBoardInfo(Map<Integer, Integer> continentsBounus,int continentIncrease, String cardProgression) {
-		//TODO cardProgression...
+	public BoardInfo(Map<Integer, Integer> continentsBounus,int continentIncrease, String cardProgression) {
+	
 		this.cardProgression = cardProgression;
 		this.continentIncrease = continentIncrease;
-		this.continentsBounus = continentsBounus;
+		this.continentsBonus = continentsBounus;
+	}
+
+	public BoardInfo(Board board) {
+		this.cardProgression = board.getCardProgression();
+		this.continentIncrease = board.getContinentIncrease();
+		
+		this.continentsBonus = getContinentBonuses(board);
+		
+
+	}
+
+	private Map<Integer, Integer> getContinentBonuses(Board board) {
+		
+		HashMap<Integer, Integer> bonuses = new HashMap<Integer, Integer>(board.getNumberOfContinents());		
+			
+		Country[] countries = board.getCountries();
+		int continentID;
+		
+		for(int i = 0; i <countries.length; i++){
+			continentID = countries[i].getContinent();
+			
+			if( ! continentsBonus.containsKey(continentID))
+				continentsBonus.put(continentID, board.getContinentBonus(continentID));
+		}
+		
+		return bonuses;
 	}
 
 	public int getCardValue(int round){

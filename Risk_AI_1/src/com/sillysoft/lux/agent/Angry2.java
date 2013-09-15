@@ -2,9 +2,12 @@ package com.sillysoft.lux.agent;
 
 import com.sillysoft.lux.*;
 import com.sillysoft.lux.util.*;
-import java.util.Random;
-import java.util.List;
+
+import java.awt.BorderLayout;
 import java.util.*;
+
+import javax.swing.JFrame;
+import javax.swing.JTextArea;
 
 //
 //  Angry.java
@@ -25,7 +28,7 @@ Angry is a simplistic agent that attacks lots.
 */
 
 
-public class Angry implements LuxAgent
+public class Angry2 implements LuxAgent
 {
 // This agent's ownerCode:
 protected int ID;
@@ -34,11 +37,31 @@ protected int ID;
 protected Board board;
 protected Country[] countries;
 
+
+JFrame jf ;
+JTextArea text;
+int test;
+
 // It is useful to have a random number generator for a couple of things
 protected Random rand;
 
-public Angry()
+public Angry2()
 	{
+	test =1;
+	jf = new JFrame("Console");
+	jf.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+	
+	text = new JTextArea();
+	jf.getContentPane().add(text,BorderLayout.CENTER);
+	
+	text.setText("anger2 test!\n");
+	text.setEditable(false);
+	
+	jf.pack();
+	jf.setVisible(true);
+	
+	
+	
 	rand = new Random();
 	}
 
@@ -148,7 +171,15 @@ public void placeArmies( int numberOfArmies )
 	Country placeOn = null;
 	int subTotalEnemies = 0;
 	CountryIterator neighbors = null;
-
+	try{
+		for(int i=0;i< 5;i++ ){
+			text.append("player "+i+":"+board.getAgentName(i)  );
+		}
+			
+	}catch(Exception ee){
+		
+	
+	}
 	// Use a PlayerIterator to cycle through all the countries that we own.
 	CountryIterator own = new PlayerIterator( ID, countries );
 	while (own.hasNext()) 
@@ -175,6 +206,7 @@ public void placeArmies( int numberOfArmies )
 // starting with the best matchups
 public void attackPhase()
 	{
+	text.append("card progression'"+board.getCardProgression()+"'");
 	// Keep cycling until we make no attacks
 	boolean madeAttack = true;
 	while ( madeAttack )

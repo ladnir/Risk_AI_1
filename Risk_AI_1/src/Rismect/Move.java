@@ -1,16 +1,16 @@
-package com.sillysoft.lux.agent;
+package Rismect;
 
-public class RismectMove {
+public class Move {
 	
 	public static final int ATTACK   = 0 ,
 							END_TURN = 1;
 	
-	RismectCountry us;
-	RismectCountry attacking;
+	Country us;
+	Country attacking;
 	boolean allout;
 	int player;
 	private int moveType;
-	public RismectMove(RismectCountry us,RismectCountry attacking,boolean allout){
+	public Move(Country us,Country attacking,boolean allout){
 		
 		this.player=us.player;
 		this.us=us;
@@ -19,10 +19,10 @@ public class RismectMove {
 		this.moveType = ATTACK;
 		
 	}
-	public RismectMove(int currentPlayer, int moveType) {
+	public Move(int currentPlayer, int moveType) {
 		this.moveType = moveType;
 	}
-	public static RismectMove END_TURN(int currentPlayer) {
+	public static Move END_TURN(int currentPlayer) {
 		
 		return null;
 	}

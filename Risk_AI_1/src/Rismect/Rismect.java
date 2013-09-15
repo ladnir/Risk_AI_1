@@ -1,6 +1,4 @@
-	
-	
-
+package Rismect;
 import com.sillysoft.lux.*;
 import com.sillysoft.lux.agent.LuxAgent;
 import com.sillysoft.lux.util.*;
@@ -9,28 +7,33 @@ import java.awt.BorderLayout;
 import java.util.*;
 
 import javax.swing.JFrame;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 public class Rismect implements LuxAgent{
 	// This agent's ownerCode:
 	protected int ID;
-
+	int test;
 	// We store some refs the board and to the country array
 	protected Board board;
-	protected Country[] countries;
+	protected com.sillysoft.lux.Country[] countries;
 	JFrame jf ;
+	JTextArea text;
 	// It is useful to have a random number generator for a couple of things
 	protected Random rand;
 
 	public Rismect()
 		{
+		test =1;
 		jf = new JFrame("Console");
-		jf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		jf.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		
-		JTextField text = new JTextField();
+		text = new JTextArea();
 		jf.getContentPane().add(text,BorderLayout.CENTER);
 		
-		text.setText("text test!");
+		text.setText("text test!\n");
+		text.setEditable(false);
+		
 		jf.pack();
 		jf.setVisible(true);
 		
@@ -38,7 +41,11 @@ public class Rismect implements LuxAgent{
 		
 		rand = new Random();
 		}
-
+	public void print(String message){
+		
+		text.append(message+"\n");
+		test++;		
+	}
 	// Save references to 
 	public void setPrefs( int newID, Board theboard )
 		{
@@ -86,7 +93,7 @@ public class Rismect implements LuxAgent{
 		CountryIterator continent = new ContinentIterator(cont, countries);
 		while (continent.hasNext())
 			{
-			Country c = continent.next();
+			com.sillysoft.lux.Country c = continent.next();
 			if (c.getOwner() == -1 && c.getNumberPlayerNeighbors(ID) > 0)
 				{
 				// We found one, so pick it
@@ -100,7 +107,7 @@ public class Rismect implements LuxAgent{
 		int fewestNeib = 1000000;
 		while (continent.hasNext())
 			{
-			Country c = continent.next();
+			com.sillysoft.lux.Country c = continent.next();
 			if (c.getOwner() == -1 && c.getNumberNeighbors() < fewestNeib)
 				{
 				bestCode = c.getCode();
@@ -113,7 +120,7 @@ public class Rismect implements LuxAgent{
 			// We should never get here, so print an alert if we do
 			System.out.println("ERROR in Angry.pickCountryInContinent() -> there are no open countries");
 			}
-
+		
 		return bestCode;
 		}
 
@@ -142,7 +149,7 @@ public class Rismect implements LuxAgent{
 	public void placeArmies( int numberOfArmies )
 		{
 		int mostEnemies = -1;
-		Country placeOn = null;
+		com.sillysoft.lux.Country placeOn = null;
 		int subTotalEnemies = 0;
 		CountryIterator neighbors = null;
 
@@ -150,7 +157,7 @@ public class Rismect implements LuxAgent{
 		CountryIterator own = new PlayerIterator( ID, countries );
 		while (own.hasNext()) 
 			{
-			Country us = own.next();
+			com.sillysoft.lux.Country us = own.next();
 			subTotalEnemies = us.getNumberEnemyNeighbors();
 
 			// If it's the best so far store it
@@ -167,43 +174,92 @@ public class Rismect implements LuxAgent{
 		}
 
 	// During the attack phase, Angry has a clear goal:
-//	 		Take over as much land as possible. 
+    // Take over as much land as possible. 
 	// Therefore he performs every available attack that he thinks he can win,
 	// starting with the best matchups
-	public void attackPhase()
-		{
-		// Keep cycling until we make no attacks
-		boolean madeAttack = true;
-		while ( madeAttack )
-			{
-			madeAttack = false;	// reset it. if we win an attack somewhere we set it to true.
-
-			// cycle through all of the countries that we have 2 or more armies on
-			CountryIterator armies = new ArmiesIterator( ID, 2, countries );
-			while (armies.hasNext()) 
-				{
-				Country us = armies.next();
-
-				// Find its weakest neighbor
-				Country weakestNeighbor = us.getWeakestEnemyNeighbor();
-
-				// So we have found the best matchup for Country <us>. (if there are any enemies)
-
-				// Even though this agent is a little angry, he is still consious of the odds.
-				// He will only attack if it is a good-chance of winning.
-				if (weakestNeighbor != null && us.getArmies() > weakestNeighbor.getArmies())
-					{
-					// Angry is a proud dude, and doesn't like to retreat.
-					// So he will always attack till death.
-					board.attack(us, weakestNeighbor, true);
-
-					// Set madeAttack to true, so that we loop through all our armies again
-					madeAttack = true;
-					}
+	public void attackPhase(){
+		
+		BoardInfo info = new BoardInfo(board);
+		Map map = new Map();
+		Players players = new Players(board.getNumberOfPlayers(),ID, board.getCountries());
+		
+		State state = new State(info,rand,map,  players);
+		
+		Node root = new Node(state);
+//------------------------------------------------------------------------------------------------//
+		long start = System.currentTimeMillis();
+		
+		while( start > System.currentTimeMillis() - 5000 ){
+			
+			Node selectedNode = treePolicy(root);
+			
+			int winningPlayer = defaultPolicy(selectedNode.getClonedGameState());
+			
+			selectedNode.updateNodeRankings(winningPlayer);
+			
+		}
+		
+		ListIterator<Move> moveSet = root.getFinalMoves().listIterator();
+		Move cur;
+		
+		while(moveSet.hasNext()){
+			cur = moveSet.next();
+			if(cur.us.player == this.ID)
+				switch(cur.getMoveType()){
+				case Move.ATTACK : {
+						assert(cur.allout);
+						board.attack(cur.us.info.code, cur.attacking.info.code, cur.allout);
+						
+					break;
 				}
+				case Move.END_TURN :{
+					
+				
+					return;
+					
+				}
+				default: 
+					assert(false);
+				}
+			else{
+				assert(false);
 			}
-		} // End of attackPhase
+			
+		}
+	}
+	
+	private int defaultPolicy(State currentState) {
+		
+		while( ! currentState.isTerminal()){
+		
+			Move move = null;
+			try {
+				move = currentState.getRandomMove();
+			} catch (Exception e) {
 
+				text.append(e.getMessage());
+				e.printStackTrace();
+			}
+			currentState.performMove(move);
+			
+		}
+		
+		return currentState.players.currentPlayer.id;
+	}
+	
+	private Node treePolicy(Node current) {
+		
+		while(! current.isTerminal()){
+			
+			if(current.isFullyExpanded())
+				current = current.getBestChild(.7);
+			else 
+				return current.expandNewChild();
+		}
+		
+		return current;
+	}
+	
 	// When deciding how many armies to move in after a successful attack, 
 	// Angry will just put them all into the country with more enemies
 	public int moveArmiesIn( int cca, int ccd)
@@ -237,7 +293,7 @@ public class Rismect implements LuxAgent{
 				// To cycle through the neighbors we could use a NeighborIterator, 
 				// but we can also directly use the country's AdjoingingList array.
 				// Let's use the array...
-				Country[] neighbors = countries[i].getAdjoiningList();
+				com.sillysoft.lux.Country[] neighbors = countries[i].getAdjoiningList();
 				int countryCodeBestProspect = -1;
 				int bestEnemyNeighbors = 0;
 				int enemyNeighbors = 0;

@@ -1,4 +1,4 @@
-package com.sillysoft.lux.agent;
+package Rismect;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -10,76 +10,51 @@ import java.util.TreeSet;
 import com.sillysoft.lux.Board;
 import com.sillysoft.lux.Country;
 
-public class RismectState {
+public class State {
 	
 	Random rand;
-	RismectBoardInfo staticInfo;
-	RismectCountry[] allCountries;
-	RismectPlayers players;
+	BoardInfo staticInfo;
+	//RismectCountry[] allCountries;
+	Map map;
+	Players players;
 
-	public RismectState(int id , Board board) {
-		
-		Country[] countries =  board.getCountries();
-		
-			
-		Map<Integer, Integer> continentsBonus = new HashMap<Integer, Integer>();		
-		this.players = new RismectPlayers();
+	public State(BoardInfo info,Random rand,Map map, Players players) {
 		
 		
-		int ownerID,continentID;
+		this.staticInfo =  info;
+		this.rand = rand;		
+		this.players = players;  // new RismectPlayers(board.getNumberOfPlayers(),currentPlayerID,countries);
+		this.map = map;
 		
-		for(int i = 0; i <countries.length; i++){
-			
-			ownerID = countries[i].getOwner();
-			
-			if( ! players.playerList.containsKey(ownerID) ){
-				RismectPlayer newPlayer = new RismectPlayer(ownerID, board.getPlayerCards(ownerID) );
-				players.playerList.put(ownerID, newPlayer);
-				players.playerCount++;
-			}else{
-				players.playerList.get(ownerID).countryCount++;
-				
-			}
-			
-			continentID = countries[i].getContinent();
-			
-			if( ! continentsBonus.containsKey(continentID))
-				continentsBonus.put(continentID, board.getContinentBonus(continentID));
-		}
-		
-		players.generatePlayerOrder(id);
-		
-		this.staticInfo =  new RismectBoardInfo(continentsBonus,board.getContinentIncrease(), board.getCardProgression());
-		
-		this.rand = new Random(System.currentTimeMillis());
-		
-		
-		
-		this.allCountries = new RismectCountry[countries.length];
-		
-		for(int i = 0 ; i<countries.length ; i++){
-			allCountries[i].copy(countries[i]);
-			for(int j = i-1 ; j>=0;j--){
-				if(countries[i].isNextTo(countries[j])){
-					allCountries[i].connect(allCountries[j]);
-					
-				}
-			}
-		}
+//		this.allCountries = new RismectCountry[countries.length];
+//		
+//		for(int i = 0 ; i<countries.length ; i++){
+//			allCountries[i].copy(countries[i]);
+//			for(int j = i-1 ; j>=0;j--){
+//				if(countries[i].isNextTo(countries[j])){
+//					allCountries[i].connect(allCountries[j]);
+//					
+//				}
+//			}
+//		}
 	}
 
-	public RismectState(RismectState oldGameState, RismectMove move) {
+	public State(State oldGameState, Move move) {
 		this.copy(oldGameState);
 		this.performMove(move);
 	}
 
-	public RismectState(RismectState oldGameState) {
+	public State(State oldGameState) {
 		this.copy(oldGameState);
 	}
 
-	private void copy(RismectState oldGameState) {
+	private void copy(State oldGameState) {
+		
 		this.staticInfo = oldGameState.staticInfo;
-		this.allCountries = new RismectCountry[oldGameState.allCountries.length];
+		this.allCountries = new Country[oldGameState.allCountries.length];
+		this.players = new Players(oldGameState.players);
+		
+		this.rand = new Random(System.currentTimeMillis());
 		
 		for(int i = 0;i<allCountries.length;i++){
 			allCountries[i].copy( oldGameState.allCountries[i]);
@@ -93,7 +68,7 @@ public class RismectState {
 		
 	}
 
-	public RismectMove getRandomMove() throws Exception {
+	public Move getRandomMove() throws Exception {
 		int totalMoveCount = 0;
 		
 		for(int i = 0;i<allCountries.length;i++){
@@ -110,7 +85,7 @@ public class RismectState {
 		
 		// end turn move
 		if(index == totalMoveCount -1)
-			return new RismectMove(this.players.currentPlayer.id,RismectMove.END_TURN);
+			return new Move(this.players.currentPlayer.id,Move.END_TURN);
 			
 		// attacking moves
 		int cur = 0;
@@ -120,7 +95,7 @@ public class RismectState {
 				
 				int localIndex = index-cur+ allCountries[i].enimies.size();
 				
-				return new RismectMove( this.allCountries[i], 
+				return new Move( this.allCountries[i], 
 										this.allCountries[i].enimies.get(localIndex),
 										true);
 			}
@@ -142,8 +117,9 @@ public class RismectState {
 	}
 
 	//for defaultPolicy where the changes are applied to this instance
-	public void performMove(RismectMove move) {
-		RismectCountry us = null,them = null;
+	public void performMove(Move move) {
+		
+		Country us = null,them = null;
 		
 		for(int i =0; us==null || them ==null ; i++){
 			
@@ -155,7 +131,7 @@ public class RismectState {
 		}
 		
 		switch(move.getMoveType()){
-			case RismectMove.ATTACK :{
+			case Move.ATTACK :{
 				while(us.armyCount>1 && them.armyCount != 0 ){
 					
 					//diceAttack( us, them);
@@ -171,7 +147,7 @@ public class RismectState {
 					us.armyCount = 1;
 				}
 			}
-			case RismectMove.END_TURN :{
+			case Move.END_TURN :{
 				fortify();
 				
 				players.progressToNextPlayer();
@@ -184,7 +160,7 @@ public class RismectState {
 
 	private void fortify() {
 		//TODO
-		TreeSet<RismectCountry> set = new TreeSet<RismectCountry>();
+		TreeSet<Country> set = new TreeSet<Country>();
 		
 		for(int i = 0; i< this.allCountries.length; i++){
 			
@@ -192,7 +168,7 @@ public class RismectState {
 		}
 	}
 
-	private void staticAttack(RismectCountry attacker, RismectCountry defender) {
+	private void staticAttack(Country attacker, Country defender) {
 		double  attackerArmy=attacker.armyCount,
 				defenderArmy=defender.armyCount;
 		
@@ -237,7 +213,7 @@ public class RismectState {
 		
 	}
 
-	private void diceAttack( RismectCountry attacker, RismectCountry defender) {
+	private void diceAttack( Country attacker, Country defender) {
 		
 		
 		
@@ -266,14 +242,14 @@ public class RismectState {
 		
 	}
 
-	public LinkedList<RismectMove> getAllMoves() {
-		LinkedList<RismectMove> moveStack = new LinkedList<RismectMove>();
+	public LinkedList<Move> getAllMoves() {
+		LinkedList<Move> moveStack = new LinkedList<Move>();
 		
 		for( int i = 0; i < allCountries.length ; i++){
 			if(allCountries[i].player == this.players.currentPlayer.id){
 				for( int j =0 ; j<allCountries[i].enimies.size(); j++){
 					
-					moveStack.add(new RismectMove(allCountries[i],allCountries[i].enimies.get(j),true));
+					moveStack.add(new Move(allCountries[i],allCountries[i].enimies.get(j),true));
 					
 				}
 			}
@@ -281,7 +257,7 @@ public class RismectState {
 		
 		
 		//add end turn move
-		moveStack.add(new RismectMove(this.players.currentPlayer.id, RismectMove.END_TURN) );
+		moveStack.add(new Move(this.players.currentPlayer.id, Move.END_TURN) );
 
 		return moveStack;
 	}
