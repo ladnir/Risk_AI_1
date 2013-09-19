@@ -179,13 +179,21 @@ public class Rismect implements LuxAgent{
 	// starting with the best matchups
 	public void attackPhase(){
 		
-		BoardInfo info = new BoardInfo(board);
-		Map map = new Map();
-		Players players = new Players(board.getNumberOfPlayers(),ID, board.getCountries());
+		// ----- STATIC Board Information ------- \\
+		BoardInfo.cardProgression = board.getCardProgression(); 
+		BoardInfo.continentIncrease =  board.getContinentIncrease();
+		BoardInfo.continentsBonus = Factory.getContinentBonuses(board);
+		BoardInfo.map = Factory.getBoardMap(board.getCountries());
 		
-		State state = new State(info,rand,map,  players);
+		
+		// ----- dynamic state information ------ \\
+		Players players = new Players(board.getNumberOfPlayers(),ID, board.getCountries());
+		HashMap<Integer, Army> armies = Factory.getArmies(players,board.getCountries());
+		
+		State state = Factory.newState(rand,armies, players,State.ATTACK_STAGE);
 		
 		Node root = new Node(state);
+		
 //------------------------------------------------------------------------------------------------//
 		long start = System.currentTimeMillis();
 		
@@ -204,11 +212,11 @@ public class Rismect implements LuxAgent{
 		
 		while(moveSet.hasNext()){
 			cur = moveSet.next();
-			if(cur.us.player == this.ID)
+			if(cur.us.owner == this.ID)
 				switch(cur.getMoveType()){
 				case Move.ATTACK : {
 						assert(cur.allout);
-						board.attack(cur.us.info.code, cur.attacking.info.code, cur.allout);
+						board.attack(cur.us.country.code, cur.attacking.country.code, cur.allout);
 						
 					break;
 				}

@@ -1,19 +1,20 @@
 package Rismect;
 
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Map.Entry;
 
 import com.sillysoft.lux.Country;
 
 public class Players {
 
-	Map<Integer, Player> playerList;
+	
+	HashMap<Integer, Player> playerList;
 	int playerCount;
 	Player currentPlayer;
 	
-	public Players(int playerCount,int currentPlayerID, Country[] countries){
+	public Players(int playerCount,int currentPlayerID, com.sillysoft.lux.Board board){
 		
+		Country[] countries = board.getCountries();
 		this.playerList = new HashMap<Integer, Player>(playerCount);
 		
 		int ownerID;
@@ -47,28 +48,11 @@ public class Players {
 	}
 
 
-	public void progressToNextPlayer(){
+	public Boolean progressToNextPlayer(){
 		
 		this.currentPlayer = this.currentPlayer.nextPlayer;
-	}
-
-	public void checkPlayerStatus(int playerID) {
 		
-		Player player = this.playerList.get(playerID);
-		
-		if(player.countryCount<1){
-			player.previousPlayer.nextPlayer = player.nextPlayer;
-			player.nextPlayer.previousPlayer = player.previousPlayer;
-			
-			player.nextPlayer= null;
-			player.previousPlayer = null;
-			
-			playerList.remove(playerID);
-			
-			playerCount --;
-		}
-		
-		
+		return this.currentPlayer.id < this.currentPlayer.previousPlayer.id;
 	}
 	
 	public void generatePlayerOrder(int currentPlayerID){
@@ -94,6 +78,12 @@ public class Players {
 		
 		cur.nextPlayer = first;
 		first.previousPlayer = cur;
+		
+	}
+
+
+	public void checkPlayersStatus() {
+		
 		
 	}
 	

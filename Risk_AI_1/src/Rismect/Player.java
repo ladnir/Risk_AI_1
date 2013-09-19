@@ -22,9 +22,15 @@ public class Player {
 
 	public boolean canCashCards(){
 		
-		if(cardCount>3) return true;
+		if(cardCount>4) return true;
 		
 		return false;
+	}
+
+	public int cashCards(int round) {
+		assert(cardCount>3);
+		cardCount -= 3;
+		return BoardInfo.getCardValue(round);
 	}
 	
 }
