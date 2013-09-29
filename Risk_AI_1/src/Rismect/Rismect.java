@@ -136,7 +136,7 @@ public class Rismect implements LuxAgent{
 	// For now just let that always happen
 	public void cardsPhase( Card[] cards )
 		{
-		// xxagentxx Angry cards phase
+			
 		}
 
 	// Angry's thought process when placing his armies is simple. 
@@ -148,29 +148,7 @@ public class Rismect implements LuxAgent{
 	// has at least <numberOfArmies> armies
 	public void placeArmies( int numberOfArmies )
 		{
-		int mostEnemies = -1;
-		com.sillysoft.lux.Country placeOn = null;
-		int subTotalEnemies = 0;
-		CountryIterator neighbors = null;
-
-		// Use a PlayerIterator to cycle through all the countries that we own.
-		CountryIterator own = new PlayerIterator( ID, countries );
-		while (own.hasNext()) 
-			{
-			com.sillysoft.lux.Country us = own.next();
-			subTotalEnemies = us.getNumberEnemyNeighbors();
-
-			// If it's the best so far store it
-			if ( subTotalEnemies > mostEnemies )
-				{
-				mostEnemies = subTotalEnemies;
-				placeOn = us;
-				}
-			}
-
-		// So now placeOn is the country that we own with the most enemies.
-		// Tell the board to place all of our armies there
-		board.placeArmies( numberOfArmies, placeOn);
+			Factory.getSupplyMove(numberOfArmies).PerformMove(board, ID);
 		}
 
 	// During the attack phase, Angry has a clear goal:
@@ -187,10 +165,10 @@ public class Rismect implements LuxAgent{
 		
 		
 		// ----- dynamic state information ------ \\
-		Players players = new Players(board.getNumberOfPlayers(),ID, board.getCountries());
+		Players players = new Players(board.getNumberOfPlayers(),ID, board);
 		HashMap<Integer, Army> armies = Factory.getArmies(players,board.getCountries());
 		
-		State state = Factory.newState(rand,armies, players,State.ATTACK_STAGE);
+		State state = new State(rand,armies, players,State.ATTACK_STAGE);
 		
 		Node root = new Node(state);
 		
@@ -212,26 +190,8 @@ public class Rismect implements LuxAgent{
 		
 		while(moveSet.hasNext()){
 			cur = moveSet.next();
-			if(cur.us.owner == this.ID)
-				switch(cur.getMoveType()){
-				case Move.ATTACK : {
-						assert(cur.allout);
-						board.attack(cur.us.country.code, cur.attacking.country.code, cur.allout);
-						
-					break;
-				}
-				case Move.END_TURN :{
-					
-				
-					return;
-					
-				}
-				default: 
-					assert(false);
-				}
-			else{
-				assert(false);
-			}
+			
+			cur.PerformMove(board, ID);
 			
 		}
 	}
@@ -248,7 +208,7 @@ public class Rismect implements LuxAgent{
 				text.append(e.getMessage());
 				e.printStackTrace();
 			}
-			currentState.performMove(move);
+			move.PerformMove(currentState);
 			
 		}
 		
@@ -286,60 +246,8 @@ public class Rismect implements LuxAgent{
 
 	public void fortifyPhase()
 		{	
-		// Cycle through all the countries and find countries that we could move from:
-		for (int i = 0; i < board.getNumberOfCountries(); i++)
-			{
-			if (countries[i].getOwner() == ID && countries[i].getMoveableArmies() > 0)
-				{
-				// This means we've found a country of ours that we can move from if we want to.
-
-				// We determine the best country by counting the enemy neighbors it has.
-				// The most enemy neighbors is where we move. Also, if there are 0 enemy 
-				// neighbors where the armies are on now, we move to a random neighbor (in 
-				// the hopes we'll find an enemy eventually).
-
-				// To cycle through the neighbors we could use a NeighborIterator, 
-				// but we can also directly use the country's AdjoingingList array.
-				// Let's use the array...
-				com.sillysoft.lux.Country[] neighbors = countries[i].getAdjoiningList();
-				int countryCodeBestProspect = -1;
-				int bestEnemyNeighbors = 0;
-				int enemyNeighbors = 0;
-
-				for (int j = 0; j < neighbors.length; j++)
-					{
-					if (neighbors[j].getOwner() == ID)
-						{
-						enemyNeighbors = neighbors[j].getNumberEnemyNeighbors();
-
-						if ( enemyNeighbors > bestEnemyNeighbors )
-							{
-							// Then so far this is the best country to move to:
-							countryCodeBestProspect = neighbors[j].getCode();
-							bestEnemyNeighbors = enemyNeighbors;
-							}
-						}
-					}
-				// Now let's calculate the number of enemies of the country where the armies 
-				// already are, to see if they should stay here:
-				enemyNeighbors = countries[i].getNumberEnemyNeighbors();
-
-				// If there's a better country to move to, move:
-				if ( bestEnemyNeighbors > enemyNeighbors )
-					{
-					// Then the armies should move:
-					// So now the country that had the best ratio should be moved to:
-					board.fortifyArmies( countries[i].getMoveableArmies(), i, countryCodeBestProspect );
-					}
-				// If there are no good places to move to, move to a random place:
-				else if ( enemyNeighbors == 0 )
-					{
-					// We choose an int from [0, neighbors.length]:
-					int randCC = rand.nextInt(neighbors.length);
-					board.fortifyArmies( countries[i].getMoveableArmies(), i, neighbors[randCC].getCode() );
-					}
-				}
-			}
+			Factory.getFortifyMove().PerformMove(board, ID);
+			
 		}	// End of fortifyPhase() method
 
 

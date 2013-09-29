@@ -11,6 +11,8 @@ public class State {
 	static final int SUPPLY_STAGE = 0;
 	static final int ATTACK_STAGE = 1;
 	static final int FORTIFY_STAGE = 2;
+	static final int FORCE_CARD_CASH_STAGE =3;
+	
 	
 	int round;//TODO make rounds increase...
 	int stage;
@@ -49,8 +51,12 @@ public class State {
 	}
 
 	public Move getRandomMove(){
-		
-		if(this.stage == State.SUPPLY_STAGE){
+		if(this.stage == State.FORCE_CARD_CASH_STAGE){
+			int income = players.currentPlayer.cashCards(round);
+			
+			return Factory.getSupplyMove(income);
+			
+		}else if(this.stage == State.SUPPLY_STAGE){
 			int income = getIncome();
 			
 			if(players.currentPlayer.canCashCards())				
@@ -60,7 +66,6 @@ public class State {
 			
 		}else if(this.stage == State.ATTACK_STAGE){
 			int totalMoveCount = 0;
-			
 			
 			// gets the total number a available attacks
 			for(Entry<Integer,Army> entry : this.armies.entrySet()){
@@ -72,8 +77,13 @@ public class State {
 							totalMoveCount++;
 			}
 			
+			totalMoveCount++;//fortify move
+			
 			// selects a random attack among the available
 			int moveIndex = rand.nextInt()% totalMoveCount;
+			
+			if(moveIndex == totalMoveCount-1)// check for index == fortify move
+				return Factory.getFortifyMove();
 			
 			int curIndex=0;
 			
@@ -96,6 +106,40 @@ public class State {
 		assert false;
 		
 		return null;
+	}
+
+	public LinkedList<Move> getAllMoves() {
+		LinkedList<Move> moves = new LinkedList<Move>();
+		
+		if(this.stage == State.SUPPLY_STAGE){
+			int income = getIncome();
+			
+			if(players.currentPlayer.canCashCards())				
+				income += players.currentPlayer.cashCards(round);
+			
+			moves.add(Factory.getSupplyMove(income));
+			
+		}else if(this.stage == State.ATTACK_STAGE){
+			
+			
+			// finds and returns that attack
+			for(Entry<Integer,Army> entry : this.armies.entrySet()){
+				Army army = entry.getValue();
+			
+				if(army.armyCount > 1 && army.owner == this.players.currentPlayer )
+					for(CountryInfo neighbor : army.country.neighbors)					
+						if(armies.get(neighbor.code).owner != this.players.currentPlayer)
+							moves.add( Factory.getAttackMove(army.country,neighbor));
+							
+			}
+			
+			moves.add( Factory.getFortifyMove());
+		}
+		
+		assert(moves.size()>0);
+		
+		
+		return moves;
 	}
 
 	private int getIncome() {
@@ -129,70 +173,6 @@ public class State {
 			return true;
 		
 		return true;
-	}
-
-////	//for defaultPolicy where the changes are applied to this instance
-//	public void performMove(Move move) {
-//		
-//		Country us = null,them = null;
-//		
-//		for(int i =0; us==null || them ==null ; i++){
-//			
-//			if(this.allCountries[i].code == move.attacking.code){
-//				them = this.allCountries[i];
-//			}else if(this.allCountries[i].code == move.us.code){
-//				us = this.allCountries[i];
-//			}
-//		}
-//		
-//		switch(move.getMoveType()){
-//			case Move.ATTACK :{
-//				while(us.armyCount>1 && them.armyCount != 0 ){
-//					
-//					//diceAttack( us, them);
-//					staticAttack(us,them);
-//				}
-//				
-//				if(them.armyCount == 0){
-//					players.playerList.get(them.player).countryCount--;
-//					players.checkPlayerStatus(them.player);
-//					
-//					players.playerList.get(us.player).countryCount++;
-//					them.armyCount = us.armyCount -1;
-//					us.armyCount = 1;
-//				}
-//			}
-//			case Move.END_TURN :{
-//				fortify();
-//				
-//				players.progressToNextPlayer();
-//				
-//			}
-//		}
-//		
-//	}
-
-
-
-	public LinkedList<Move> getAllMoves() {
-		//TODO
-//		LinkedList<Move> moveStack = new LinkedList<Move>();
-//		
-//		for( int i = 0; i < allCountries.length ; i++){
-//			if(allCountries[i].owner == this.players.currentPlayer.id){
-//				for( int j =0 ; j<allCountries[i].enimies.size(); j++){
-//					
-//					moveStack.add(new Move(allCountries[i],allCountries[i].enimies.get(j),true));
-//					
-//				}
-//			}
-//		}
-//		
-//		
-//		//add end turn move
-//		moveStack.add(new Move(this.players.currentPlayer.id, Move.END_TURN) );
-
-		return null;
 	}
 
 	public void progressToNextPlayer() {
